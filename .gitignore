@@ -1,4 +1,3 @@
-
 #Editor files
 *~
 *~
@@ -32,9 +31,5 @@ deps/
 
 # Test results
 pytest_tmp/
-
-# Scikit-build build directory
-_skbuild/
-
-# C++ module for leflib gets installed in leflib/ after running pip install -e .
-siliconcompiler/leflib/_leflib.*.so
+.pytest_cache/
+.ipynb_checkpoints/
