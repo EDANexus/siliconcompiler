@@ -418,7 +418,31 @@ def _write_task_manifest(chip, tool, path=None, backup=True):
         if backup and os.path.exists(manifest_path):
             shutil.copyfile(manifest_path, f'{manifest_path}.bak')
 
+        schema = chip.schema
+        if chip.get('option', 'strict'):
+            # Create copy of schema
+            strict_schema = schema.copy()
+
+            step = strict_schema.get('arg', 'step')
+            index = strict_schema.get('arg', 'index')
+
+            # Remove all non-identified keys for this node
+            tool, task = chip._get_tool_task(step, index)
+            reqs = [tuple(req.split(',')) for req in strict_schema.get(
+                'tool', tool, 'task', task, 'require', step=step, index=index)]
+
+            for key in strict_schema.allkeys():
+                if key not in reqs:
+                    print(key)
+                    strict_schema._remove(*key)
+
+            # Set schema
+            chip.schema = strict_schema
+
         chip.write_manifest(manifest_path, abspath=True)
+
+        # Restore schema
+        chip.schema = schema
 
 
 ###########################################################################
