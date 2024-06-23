@@ -23,8 +23,12 @@ from siliconcompiler.tools.nextpnr import apr as nextpnr_apr
 ############################################################################
 def make_docs(chip):
     _make_docs(chip)
+    flows = []
     chip.set('fpga', 'partname', 'example_arch')
-    return setup(chip)
+    flows.append(setup(chip))
+    chip.set('fpga', 'partname', 'ice401234')
+    flows.append(setup(chip))
+    return flows
 
 
 ############################################################################

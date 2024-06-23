@@ -205,16 +205,25 @@ class DynamicGen(SphinxDirective):
         if not isinstance(chips, list):
             chips = [chips]
 
-        for chip in chips:
-            extra_content = self.extra_content(chip, modname)
+        if not self.is_extra_content_list():
+            for chip in chips:
+                extra_content = self.extra_content(chip, modname)
+                if extra_content is not None:
+                    s += extra_content
+
+                package_info = self.package_information(chip, modname)
+                if package_info is not None:
+                    s += [package_info]
+
+                disp = self.display_config(chip, modname)
+                if disp:
+                    s += disp
+        else:
+            extra_content = self.extra_content(chips, modname)
             if extra_content is not None:
                 s += extra_content
 
-            package_info = self.package_information(chip, modname)
-            if package_info is not None:
-                s += [package_info]
-
-            disp = self.display_config(chip, modname)
+            disp = self.display_config(chips[0], modname)
             if disp:
                 s += disp
 
@@ -467,6 +476,9 @@ class DynamicGen(SphinxDirective):
         # schema without leaves.
         return child_sections
 
+    def is_extra_content_list(self):
+        return False
+
 #########################
 # Specialized extensions
 #########################
@@ -477,10 +489,29 @@ class FlowGen(DynamicGen):
     REF_PREFIX = 'flows'
     SEARCH_ENV = "SC_DOCS_FLOWS"
 
-    def extra_content(self, chip, modname):
-        flow_path = os.path.join(self.env.app.outdir, f'_images/gen/{modname}.svg')
-        chip.write_flowgraph(flow_path, flow=chip.design)
-        return [image(flow_path, center=True)]
+    def extra_content(self, chips, modname):
+        if len(chips) == 1:
+            chip = chips[0]
+            flow_path = os.path.join(self.env.app.outdir, f'_images/gen/{modname}.svg')
+            chip.write_flowgraph(flow_path, flow=chip.design)
+            return [image(flow_path, center=True)]
+        else:
+            images = []
+            titles = []
+            for n, chip in enumerate(chips):
+                flow_path = os.path.join(self.env.app.outdir, f'_images/gen/{modname}_{n}.svg')
+                chip.write_flowgraph(flow_path, flow=chip.design)
+                images.append(image(flow_path, center=True))
+                title = para(chip.design)
+                title['align'] = 'center'
+                titles.append(title)
+            
+            colspec = len(images) * '\X{1}{2}|'
+            colspec = '{|' + colspec + '}'
+            return build_table([images, titles], colspec=colspec)
+
+    def is_extra_content_list(self):
+        return True
 
     def display_config(self, chip, modname):
         '''Display parameters under `flowgraph, <step>`, `metric, <step>` and
