@@ -22,12 +22,21 @@ from siliconcompiler.tools.nextpnr import apr as nextpnr_apr
 # DOCS
 ############################################################################
 def make_docs(chip):
-    _make_docs(chip)
     flows = []
     chip.set('fpga', 'partname', 'example_arch')
     flows.append(setup(chip))
-    chip.set('fpga', 'partname', 'ice401234')
+    flows[-1].set('option', 'var', 'title',
+                  f"Verilog input: {chip.get('fpga', 'partname')}")
+    _make_docs(chip)
+    chip.set('fpga', 'partname', 'example_arch')
     flows.append(setup(chip))
+    flows[-1].set('option', 'var', 'title', chip.get('fpga', 'partname'))
+    chip.set('fpga', 'partname', 'ice40up5k-sg48')
+    flows.append(setup(chip))
+    flows[-1].set('option', 'var', 'title', chip.get('fpga', 'partname'))
+    chip.set('fpga', 'partname', 'XCKU11P-1FFVA1156E')
+    flows.append(setup(chip))
+    flows[-1].set('option', 'var', 'title', chip.get('fpga', 'partname'))
     return flows
 
 

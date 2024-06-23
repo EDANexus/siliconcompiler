@@ -502,13 +502,21 @@ class FlowGen(DynamicGen):
                 flow_path = os.path.join(self.env.app.outdir, f'_images/gen/{modname}_{n}.svg')
                 chip.write_flowgraph(flow_path, flow=chip.design)
                 images.append(image(flow_path, center=True))
-                title = para(chip.design)
-                title['align'] = 'center'
-                titles.append(title)
-            
-            colspec = len(images) * '\X{1}{2}|'
+                titles.append(para(chip.get('option', 'var', 'title')[0]))
+
+            max_cols = 2
+            col_lim_images = [images[n:n+max_cols] for n in range(0, len(images), max_cols)]
+            col_lim_titles = [titles[n:n+max_cols] for n in range(0, len(titles), max_cols)]
+            colspec = len(col_lim_images) * r'\X{1}{2}|'
             colspec = '{|' + colspec + '}'
-            return build_table([images, titles], colspec=colspec)
+
+            table_data = []
+            for img_row, title_row in zip(col_lim_images, col_lim_titles):
+                table_data.append(img_row)
+                table_data.append(title_row)
+
+            table = build_table(table_data, colspec=colspec)
+            return table
 
     def is_extra_content_list(self):
         return True

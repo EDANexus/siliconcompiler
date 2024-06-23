@@ -21,8 +21,16 @@ from siliconcompiler.tools.builtin import minimum
 ############################################################################
 def make_docs(chip):
     n = 3
+    flows = []
+    flows.append(setup(chip))
+    flows[-1].set('option', 'var', 'title', 'Simple')
     _make_docs(chip)
-    return setup(chip, syn_np=n, floorplan_np=n, physyn_np=n, place_np=n, cts_np=n, route_np=n)
+    flows.append(setup(chip))
+    flows[-1].set('option', 'var', 'title', 'Simple with multiple frontends')
+    flows.append(setup(chip,
+                       syn_np=n, floorplan_np=n, physyn_np=n, place_np=n, cts_np=n, route_np=n))
+    flows[-1].set('option', 'var', 'title', 'With parallelism')
+    return flows
 
 
 ###########################################################################

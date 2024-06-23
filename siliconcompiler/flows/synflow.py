@@ -15,7 +15,13 @@ from siliconcompiler.tools.builtin import minimum
 def make_docs(chip):
     n = 3
     _make_docs(chip)
-    return setup(chip, syn_np=n, timing_np=n)
+    flows = []
+    flows.append(setup(chip))
+    flows[-1].set('option', 'var', 'title', 'Simple')
+    flows.append(setup(chip,
+                       syn_np=n, timing_np=n))
+    flows[-1].set('option', 'var', 'title', 'With parallelism')
+    return flows
 
 
 ###########################################################################
