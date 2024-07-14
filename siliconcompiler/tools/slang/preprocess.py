@@ -3,6 +3,7 @@ Lint system verilog
 '''
 from siliconcompiler.tools import slang
 import os
+import sys
 import pyslang
 from siliconcompiler.tools._common import get_tool_task
 
@@ -43,26 +44,40 @@ def __get_files(manager, tree):
     return [os.path.abspath(f) for f in files if os.path.isfile(f)]
 
 
+def __print_io(io):
+    if io.out():
+        print(io.out())
+    if io.err():
+        print(io.err(), file=sys.stderr)
+    io.clear()
+
+
 def run(chip):
-    driver, exitcode = slang._get_driver(chip, runtime_options)
-    if exitcode:
-        return exitcode
+    with pyslang.IORedirect() as io:
+        driver, exitcode = slang._get_driver(chip, runtime_options)
+        __print_io(io)
+        if exitcode:
+            return exitcode
 
-    compilation, ok = slang._compile(chip, driver)
+    with pyslang.IORedirect() as io:
+        compilation, ok = slang._compile(chip, driver)
+        __print_io(io)
 
-    manager = compilation.sourceManager
+        manager = compilation.sourceManager
 
-    with open(f'outputs/{chip.top()}.v', 'w') as out:
-        for tree in compilation.getSyntaxTrees():
-            files = __get_files(manager, tree)
+        with open(f'outputs/{chip.top()}.v', 'w') as out:
+            for tree in compilation.getSyntaxTrees():
+                files = __get_files(manager, tree)
 
-            writer = pyslang.SyntaxPrinter(manager)
-            writer.setIncludeTrivia(True)
-            writer.setIncludeComments(True)
-            writer.setSquashNewlines(True)
-            for src_file in files:
-                out.write(f'// SC-Source: {src_file}\n')
-            out.write(writer.print(tree).str() + '\n')
+                writer = pyslang.SyntaxPrinter(manager)
+                writer.setIncludeTrivia(True)
+                writer.setIncludeComments(True)
+                writer.setSquashNewlines(True)
+                for src_file in files:
+                    out.write(f'// SC-Source: {src_file}\n')
+                out.write(writer.print(tree).str() + '\n')
+
+        __print_io(io)
 
     if ok:
         return 0

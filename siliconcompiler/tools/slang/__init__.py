@@ -19,13 +19,6 @@ from siliconcompiler.tools._common import \
 # Setup Tool (pre executable)
 ################################
 def setup(chip):
-    tool = 'slang'
-
-    # Standard Setup
-    chip.set('tool', tool, 'exe', 'slang')
-    chip.set('tool', tool, 'vswitch', '--version')
-    chip.set('tool', tool, 'version', '>=6.0', clobber=False)
-
     add_require_input(chip, 'input', 'rtl', 'verilog')
     add_frontend_requires(chip, ['ydir', 'idir', 'vlib', 'libext', 'define', 'param'])
 
