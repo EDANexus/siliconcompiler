@@ -8,6 +8,7 @@ import platform
 import psutil
 import socket
 import re
+import resource
 import shlex
 import shutil
 import subprocess
@@ -814,10 +815,10 @@ def _run_executable_or_builtin(chip, step, index, version, toolpath, workdir, ru
                     open(stderr_file, 'w') as stderr_writer:
                 if stderr_file == stdout_file:
                     stderr_writer.close()
-                    stderr_writer = subprocess.STDOUT
+                    stderr_writer = sys.stdout
 
-                with contextlib.redirect_stdout(stdout_writer), \
-                        contextlib.redirect_stderr(stderr_writer):
+                with contextlib.redirect_stderr(stderr_writer), \
+                        contextlib.redirect_stdout(stdout_writer):
                     retcode = run_func(chip)
         except Exception as e:
             chip.logger.error(f'Failed in run() for {tool}/{task}: {e}')
