@@ -2,10 +2,12 @@
 Lint system verilog
 '''
 from siliconcompiler.tools import slang
+from siliconcompiler import sc_open
 import os
+import re
 import sys
 import pyslang
-from siliconcompiler.tools._common import get_tool_task
+from siliconcompiler.tools._common import get_tool_task, record_metric
 
 
 def setup(chip):
@@ -18,8 +20,8 @@ def setup(chip):
     chip.set('tool', tool, 'task', task, 'threads', os.cpu_count(),
              clobber=False, step=step, index=index)
 
-    chip.set('tool', tool, 'task', task, 'stdout', 'destination', 'output', step=step, index=index)
-    chip.set('tool', tool, 'task', task, 'stdout', 'suffix', 'v', step=step, index=index)
+    chip.set('tool', tool, 'task', task, 'stdout', 'destination', 'log', step=step, index=index)
+    chip.set('tool', tool, 'task', task, 'stderr', 'destination', 'log', step=step, index=index)
 
     chip.set('tool', tool, 'task', task, 'output', f'{chip.top()}.v', step=step, index=index)
 
@@ -91,3 +93,16 @@ def runtime_options(chip):
     options.append("--ignore-unknown-modules")
 
     return options
+
+
+def post_process(chip):
+    step = chip.get('arg', 'step')
+    index = chip.get('arg', 'index')
+    tool, task = get_tool_task(chip, step, index)
+
+    with sc_open(f'{step}.log') as f:
+        for line in f:
+            match = re.search(r'(\d+) errors, (\d+) warnings', line)
+            if match:
+                record_metric(chip, step, index, 'errors', match.group(1), f'{step}.log')
+                record_metric(chip, step, index, 'warnings', match.group(2), f'{step}.log')
