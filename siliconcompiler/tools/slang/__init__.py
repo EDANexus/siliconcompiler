@@ -32,11 +32,11 @@ def parse_version(stdout):
 
 
 def runtime_options(chip):
-    options = []
-
     step = chip.get('arg', 'step')
     index = chip.get('arg', 'index')
     tool, task = get_tool_task(chip, step, index)
+
+    options = chip.get('tool', tool, 'task', task, 'option', step=step, index=index)
 
     options.extend(['--threads', str(chip.get('tool', tool, 'task', task, 'threads',
                                               step=step, index=index))])
