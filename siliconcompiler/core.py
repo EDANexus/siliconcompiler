@@ -246,8 +246,13 @@ class Chip:
             log_format.append(f'{step: <{max_step_len}}')
             log_format.append(f'{index: >{max_index_len}}')
 
+        log_formatprefix = "| "
+        if loglevel == "quiet":
+            log_format = []
+            log_formatprefix = ""
+
         log_format.append('%(message)s')
-        logformat = '| ' + ' | '.join(log_format)
+        logformat = log_formatprefix + ' | '.join(log_format)
 
         if not self.logger.hasHandlers():
             stream_handler = logging.StreamHandler(stream=sys.stdout)
