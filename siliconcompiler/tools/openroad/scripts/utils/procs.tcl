@@ -1,3 +1,43 @@
+proc get_input_files { type key } {
+    set sc_design [sc_cfg_get design]
+
+    set input_file "inputs/${sc_design}.${type}"
+    if { [file exists $input_file] } {
+        return [list $input_file]
+    }
+
+    if { [sc_cfg_exists {*}$key] } {
+        return [sc_cfg_get {*}$key]
+    }
+
+    return []
+}
+
+proc has_input_files { type key } {
+    return [expr {[get_input_files $type $key] != []}]
+}
+
+proc sc_get_layer_name { name } {
+  if { [llength $name] > 1 } {
+    set layers []
+    foreach l $name {
+      lappend layers [sc_get_layer_name $l]
+    }
+    return $layers
+  }
+  if { [string length $name] == 0 } {
+    return ""
+  }
+  if { [ string is integer $name ] } {
+    set layer [[ord::get_db_tech] findRoutingLayer $name]
+    if { $layer == "NULL" } {
+      utl::error FLW 1 "$name is not a valid routing layer."
+    }
+    return [$layer getName]
+  }
+  return $name
+}
+
 #######################
 # Global Placement
 #######################
