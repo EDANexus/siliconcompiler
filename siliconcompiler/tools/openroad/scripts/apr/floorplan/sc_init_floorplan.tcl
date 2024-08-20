@@ -1,14 +1,53 @@
+###############################
+# Reading SC Schema
+###############################
 
-check_setup....
+source ./sc_manifest.tcl > /dev/null
+
+##############################
+# Source OpenROAD driver
+###############################
+
+source "[sc_cfg_tool_task_get refdir]/utils/template/sc_driver.tcl"
+
+##############################
+# Source prescript scripts
+###############################
+
+utl::push_metrics_stage "sc__prestep__{}"
+foreach sc_pre_script [sc_cfg_tool_task_get prescript] {
+    puts "Sourcing prescript: ${sc_pre_script}"
+    source -echo $sc_pre_script
+}
+utl::pop_metrics_stage
+
+###########################
+# Setup task metrics collection
+###########################
+
+utl::push_metrics_stage "sc__step__{}"
+
+##############################
+# Check timing setup
+###############################
+
+check_setup
+
+##############################
+# Initialize floorplan
+###############################
 
 if { [sc_cfg_exists input asic floorplan] } {
   set def [lindex [sc_cfg_get input asic floorplan] 0]
   puts "Reading floorplan DEF: ${def}"
   read_def -floorplan_initialize $def
 } else {
+  set sc_libtype [sc_cfg_get library $sc_mainlib asic libarch]
+  set sc_site [lindex [sc_cfg_get library $sc_mainlib asic site $sc_libtype] 0]
+
   #NOTE: assuming a two tuple value as lower left, upper right
-  set sc_diearea   [sc_cfg_get constraint outline]
-  set sc_corearea  [sc_cfg_get constraint corearea]
+  set sc_diearea [sc_cfg_get constraint outline]
+  set sc_corearea [sc_cfg_get constraint corearea]
   if { $sc_diearea != "" && \
        $sc_corearea != "" } {
     # Use die and core sizes
@@ -32,7 +71,7 @@ puts "Die area: [ord::get_die_area]"
 puts "Core area: [ord::get_core_area]"
 
 ###########################
-# Track Creation
+# Track creation
 ###########################
 
 # source tracks from file if found, else else use schema entries
@@ -287,3 +326,38 @@ if { $do_automatic_pins } {
 ###########################
 
 remove_buffers
+
+###########################
+# End task metrics collection
+###########################
+
+utl::pop_metrics_stage
+
+##############################
+# Source postscripts scripts
+###############################
+
+utl::push_metrics_stage "sc__poststep__{}"
+if { [sc_cfg_tool_task_exists postscript] } {
+  foreach sc_post_script [sc_cfg_tool_task_get postscript] {
+    puts "Sourcing post script: ${sc_post_script}"
+    source -echo $sc_post_script
+  }
+}
+utl::pop_metrics_stage
+
+###############################
+# Write Design Data
+###############################
+
+utl::push_metrics_stage "sc__write__{}"
+source "${sc_refdir}/utils/write_data.tcl"
+utl::pop_metrics_stage
+
+###############################
+# Reporting
+###############################
+
+utl::push_metrics_stage "sc__metric__{}"
+source "${sc_refdir}/utils/metrics.tcl"
+utl::pop_metrics_stage

@@ -12,7 +12,7 @@ def setup_tool(chip):
     index = chip.get('arg', 'index')
     tool, task = get_tool_task(chip, step, index)
 
-    chip.set('tool', tool, 'task', task, 'script', 'sc_rcx.tcl', step=step, index=index)
+    chip.set('tool', tool, 'task', task, 'script', 'rcx/sc_rcx.tcl', step=step, index=index)
     chip.set('tool', tool, 'task', task, 'threads', 1, step=step, index=index)
 
 

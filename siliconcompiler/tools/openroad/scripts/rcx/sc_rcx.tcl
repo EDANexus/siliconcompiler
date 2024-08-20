@@ -8,16 +8,9 @@ source ./sc_manifest.tcl > /dev/null
 # Schema Helper functions
 ###############################
 
-proc sc_get_layer_name { name } {
-  if { [ string is integer $name ] } {
-    set layer [[ord::get_db_tech] findRoutingLayer $name]
-    if { $layer == "NULL" } {
-      utl::error FLW 1 "$name is not a valid routing layer."
-    }
-    return [$layer getName]
-  }
-  return $name
-}
+set sc_refdir [sc_cfg_tool_task_get refdir]
+
+source "${sc_refdir}/utils/procs.tcl"
 
 ##############################
 # Schema Adapter
@@ -28,8 +21,6 @@ set sc_step   [sc_cfg_get arg step]
 set sc_index  [sc_cfg_get arg index]
 set sc_flow   [sc_cfg_get option flow]
 set sc_task   [sc_cfg_get flowgraph $sc_flow $sc_step $sc_index task]
-
-set sc_refdir [sc_cfg_tool_task_get refdir]
 
 # Design
 set sc_design     [sc_top]

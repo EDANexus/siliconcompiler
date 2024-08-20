@@ -38,33 +38,55 @@ proc sc_get_layer_name { name } {
   return $name
 }
 
+proc has_tie_cell { type } {
+  upvar sc_cfg sc_cfg
+  upvar sc_mainlib sc_mainlib
+  upvar sc_tool sc_tool
+
+  set library_vars [sc_cfg_get library $sc_mainlib option {var}]
+  return [expr { [dict exists $library_vars openroad_tie${type}_cell] && \
+                 [dict exists $library_vars openroad_tie${type}_port] }]
+}
+
+proc get_tie_cell { type } {
+  upvar sc_cfg sc_cfg
+  upvar sc_mainlib sc_mainlib
+  upvar sc_tool sc_tool
+
+  set cell [lindex [sc_cfg_get library $sc_mainlib option {var} openroad_tie${type}_cell] 0]
+  set port [lindex [sc_cfg_get library $sc_mainlib option {var} openroad_tie${type}_port] 0]
+
+  return "$cell/$port"
+}
+
+
 #######################
 # Global Placement
 #######################
 
 proc sc_global_placement_density {} {
-  global openroad_gpl_padding
-  global openroad_gpl_place_density
-  global openroad_gpl_uniform_placement_adjustment
+  set gpl_padding [lindex [sc_cfg_tool_task_get {var} pad_global_place] 0]
+  set gpl_place_density [lindex [sc_cfg_tool_task_get {var} place_density] 0]
+  set gpl_uniform_placement_adjustment [lindex [sc_cfg_tool_task_get {var} gpl_uniform_placement_adjustment] 0]
 
   set or_uniform_density [gpl::get_global_placement_uniform_density \
-    -pad_left $openroad_gpl_padding \
-    -pad_right $openroad_gpl_padding]
+    -pad_left $gpl_padding \
+    -pad_right $gpl_padding]
 
   # Small adder to ensure requested density is slightly over the uniform density
   set or_adjust_density_adder 0.001
 
-  set selected_density $openroad_gpl_place_density
+  set selected_density $gpl_place_density
 
   # User specified adjustment
-  if { $openroad_gpl_uniform_placement_adjustment > 0.0 } {
+  if { $gpl_uniform_placement_adjustment > 0.0 } {
     set or_uniform_adjusted_density \
       [expr { $or_uniform_density + ((1.0 - $or_uniform_density) * \
-              $openroad_gpl_uniform_placement_adjustment) + $or_adjust_density_adder }]
+              $gpl_uniform_placement_adjustment) + $or_adjust_density_adder }]
     if { $or_uniform_adjusted_density > 1.00 } {
       utl::warn FLW 1 "Adjusted density exceeds 1.00 ([format %0.3f $or_uniform_adjusted_density]),\
-        reverting to use ($openroad_gpl_place_density) for global placement"
-      set selected_density $openroad_gpl_place_density
+        reverting to use ($gpl_place_density) for global placement"
+      set selected_density $gpl_place_density
     } else {
       utl::info FLW 1 "Using computed density of ([format %0.3f $or_uniform_adjusted_density])\
         for global placement"
@@ -91,16 +113,12 @@ proc sc_global_placement { args } {
     flags {-skip_io -disable_routability_driven}
   sta::check_argc_eq0 "sc_global_placement" $args
 
-  global openroad_gpl_routability_driven
-  global openroad_gpl_timing_driven
-  global openroad_gpl_padding
-
   set openroad_gpl_args []
-  if { $openroad_gpl_routability_driven == "true" && \
+  if { [lindex [sc_cfg_tool_task_get {var} gpl_routability_driven] 0] == "true" && \
        ![info exists flags(-disable_routability_driven)] } {
     lappend openroad_gpl_args "-routability_driven"
   }
-  if { $openroad_gpl_timing_driven == "true" } {
+  if { [lindex [sc_cfg_tool_task_get {var} gpl_timing_driven] 0] == "true" } {
     lappend openroad_gpl_args "-timing_driven"
   }
 
@@ -108,10 +126,12 @@ proc sc_global_placement { args } {
     lappend openroad_gpl_args "-skip_io"
   }
 
+  set gpl_padding [lindex [sc_cfg_tool_task_get {var} pad_global_place] 0]
+
   global_placement {*}$openroad_gpl_args \
     -density [sc_global_placement_density] \
-    -pad_left $openroad_gpl_padding \
-    -pad_right $openroad_gpl_padding
+    -pad_left $gpl_padding \
+    -pad_right $gpl_padding
 }
 
 ###########################
@@ -119,21 +139,19 @@ proc sc_global_placement { args } {
 ###########################
 
 proc sc_detailed_placement {} {
-  global openroad_dpl_padding
-  global openroad_dpl_padding
-  global openroad_dpl_disallow_one_site
-  global openroad_dpl_max_displacement
+  set dpl_padding [lindex [sc_cfg_tool_task_get {var} pad_detail_place] 0]
+  set dpl_max_displacement [lindex [sc_cfg_tool_task_get {var} dpl_max_displacement] 0]
 
   set_placement_padding -global \
-    -left $openroad_dpl_padding \
-    -right $openroad_dpl_padding
+    -left $dpl_padding \
+    -right $dpl_padding
 
   set dpl_args []
-  if { $openroad_dpl_disallow_one_site == "true" } {
+  if { [lindex [sc_cfg_tool_task_get {var} dpl_disallow_one_site] 0] == "true" } {
     lappend dpl_args "-disallow_one_site_gaps"
   }
 
-  detailed_placement -max_displacement $openroad_dpl_max_displacement \
+  detailed_placement -max_displacement $dpl_max_displacement \
     {*}$dpl_args
   check_placement -verbose
 }
@@ -148,12 +166,13 @@ proc sc_pin_placement { args } {
     flags {-random}
   sta::check_argc_eq0 "sc_pin_placement" $args
 
-  global sc_cfg
   global sc_tool
-  global sc_task
-  global sc_hpinmetal
-  global sc_vpinmetal
-  global openroad_ppl_arguments
+  global sc_pdk
+  global sc_stackup
+  
+  set sc_hpinmetal [sc_get_layer_name [sc_cfg_get pdk $sc_pdk {var} $sc_tool pin_layer_horizontal $sc_stackup]]
+  set sc_vpinmetal [sc_get_layer_name [sc_cfg_get pdk $sc_pdk {var} $sc_tool pin_layer_vertical $sc_stackup]]
+  set openroad_ppl_arguments [sc_cfg_tool_task_get {var} ppl_arguments]
 
   if { [sc_cfg_tool_task_exists var pin_thickness_h] } {
     set h_mult [lindex [sc_cfg_tool_task_get var pin_thickness_h] 0]
@@ -179,6 +198,19 @@ proc sc_pin_placement { args } {
     -ver_layers $sc_vpinmetal \
     {*}$openroad_ppl_arguments \
     {*}$ppl_args
+}
+
+proc sc_insert_fillers {} {
+  global sc_mainlib
+
+  set fillers [sc_cfg_get library $sc_mainlib asic cells filler]
+  if { $fillers != "" } {
+    filler_placement $fillers
+  }
+
+  check_placement -verbose
+
+  global_connect
 }
 
 ###########################
@@ -336,15 +368,12 @@ proc sc_supply_nets {} {
 ###########################
 
 proc sc_psm_check_nets {} {
-  global openroad_psm_enable
-  global openroad_psm_skip_nets
-
-  if { $openroad_psm_enable == "true" } {
+  if { [lindex [sc_cfg_tool_task_get {var} psm_enable] 0] == "true" } {
     set psm_nets []
 
     foreach net [sc_supply_nets] {
       set skipped false
-      foreach skip_pattern $openroad_psm_skip_nets {
+      foreach skip_pattern [sc_cfg_tool_task_get {var} psm_skip_nets] {
         if { [string match $skip_pattern $net] } {
           set skipped true
           break

@@ -4,13 +4,17 @@ from siliconcompiler.flows._common import setup_multiple_frontends
 from siliconcompiler.flows._common import _make_docs
 
 from siliconcompiler.tools.yosys import syn_asic
-from siliconcompiler.tools.openroad import floorplan
-from siliconcompiler.tools.openroad import physyn
-from siliconcompiler.tools.openroad import place
-from siliconcompiler.tools.openroad import cts
-from siliconcompiler.tools.openroad import route
-from siliconcompiler.tools.openroad import dfm
-from siliconcompiler.tools.openroad import export as openroad_export
+from siliconcompiler.tools.openroad import init_floorplan
+from siliconcompiler.tools.openroad import macro_placement
+from siliconcompiler.tools.openroad import endcap_tapcell_insertion
+from siliconcompiler.tools.openroad import power_grid
+from siliconcompiler.tools.openroad import io_pin_placement
+from siliconcompiler.tools.openroad import global_placement
+from siliconcompiler.tools.openroad import repair_design
+from siliconcompiler.tools.openroad import detailed_placement
+from siliconcompiler.tools.openroad import clock_tree_synthesis
+from siliconcompiler.tools.openroad import repair_timing
+from siliconcompiler.tools.openroad import fillercell_insertion
 from siliconcompiler.tools.klayout import export as klayout_export
 
 from siliconcompiler.tools.builtin import minimum
@@ -71,33 +75,49 @@ def setup(chip,
     flow = siliconcompiler.Flow(chip, flowname)
 
     # Linear flow, up until branch to run parallel verification steps.
-    longpipe = ['syn',
-                'synmin',
-                'floorplan',
-                'floorplanmin',
-                'place',
-                'placemin',
-                'cts',
-                'ctsmin',
-                'route',
-                'routemin',
-                'dfm']
+    longpipe = [
+        'syn',
+        'synmin',
+        'init_floorplan',
+        'macro_placement',
+        'tapcell',
+        'power_grid',
+        'io_pin_placement',
+        'floorplanmin',
+        'global_placement',
+        'repair_design',
+        'detailed_placement',
+        'placemin',
+        'clock_tree_synthesis',
+        'repair_timing',
+        'fillcell',
+        'ctsmin',
+        # 'route',
+        # 'routemin',
+        # 'dfm'
+    ]
 
     # step --> task
     tasks = {
         'syn': syn_asic,
         'synmin': minimum,
-        'floorplan': floorplan,
+        'init_floorplan': init_floorplan,
+        'macro_placement': macro_placement,
+        'tapcell': endcap_tapcell_insertion,
+        'power_grid': power_grid,
+        'io_pin_placement': io_pin_placement,
         'floorplanmin': minimum,
-        'physyn': physyn,
-        'physynmin': minimum,
-        'place': place,
+        'global_placement': global_placement,
+        'repair_design': repair_design,
+        'detailed_placement': detailed_placement,
         'placemin': minimum,
-        'cts': cts,
+        'clock_tree_synthesis': clock_tree_synthesis,
+        'repair_timing': repair_timing,
+        'fillcell': fillercell_insertion,
         'ctsmin': minimum,
-        'route': route,
-        'routemin': minimum,
-        'dfm': dfm
+        # 'route': route,
+        # 'routemin': minimum,
+        # 'dfm': dfm
     }
 
     np = {
@@ -152,9 +172,9 @@ def setup(chip,
             if task in (syn_asic, ):
                 goal_metrics = ('errors',)
                 weight_metrics = ()
-            elif task in (floorplan, physyn, place, cts, route, dfm):
-                goal_metrics = ('errors', 'setupwns', 'setuptns')
-                weight_metrics = ('cellarea', 'peakpower', 'leakagepower')
+            # elif task in (floorplan, physyn, place, cts, route, dfm):
+            #     goal_metrics = ('errors', 'setupwns', 'setuptns')
+            #     weight_metrics = ('cellarea', 'peakpower', 'leakagepower')
 
             for metric in goal_metrics:
                 flow.set('flowgraph', flowname, step, str(index), 'goal', metric, 0)
@@ -165,8 +185,8 @@ def setup(chip,
     # add write information steps
     flow.node(flowname, 'write_gds', klayout_export)
     flow.edge(flowname, prevstep, 'write_gds')
-    flow.node(flowname, 'write_data', openroad_export)
-    flow.edge(flowname, prevstep, 'write_data')
+    # flow.node(flowname, 'write_data', openroad_export)
+    # flow.edge(flowname, prevstep, 'write_data')
 
     return flow
 

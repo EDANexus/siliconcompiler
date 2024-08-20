@@ -1,10 +1,9 @@
 import shutil
 import os
 
-from siliconcompiler.tools.openroad import openroad
-from siliconcompiler.tools.openroad.openroad import setup as setup_tool
-from siliconcompiler.tools.openroad.openroad import build_pex_corners
-from siliconcompiler.tools.openroad.openroad import pre_process as or_pre_process
+from siliconcompiler.tools.openroad import make_docs as or_make_docs
+from siliconcompiler.tools.openroad import setup as setup_tool
+from siliconcompiler.tools.openroad import build_pex_corners
 from siliconcompiler.tools._common import find_incoming_ext, input_provides, get_tool_task
 
 
@@ -12,7 +11,7 @@ from siliconcompiler.tools._common import find_incoming_ext, input_provides, get
 # Make Docs
 ####################################################################
 def make_docs(chip):
-    openroad.make_docs(chip)
+    or_make_docs(chip)
     chip.set('tool', 'openroad', 'task', 'show', 'var', 'show_filepath', '<path>')
 
 
@@ -59,7 +58,6 @@ def generic_show_setup(chip, task, exit):
 
 
 def pre_process(chip):
-    or_pre_process(chip)
     copy_show_files(chip)
     build_pex_corners(chip)
 

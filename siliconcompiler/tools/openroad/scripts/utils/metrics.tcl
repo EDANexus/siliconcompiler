@@ -2,6 +2,10 @@
 # Report Metrics
 ###############################
 
+# Setup reports directories
+file mkdir reports/timing
+file mkdir reports/power
+
 proc sc_display_report {report} {
   if { ![file exists $report] } {
     return
@@ -12,6 +16,8 @@ proc sc_display_report {report} {
   puts $report_content
 }
 
+set sc_sta_top_n_paths [lindex [sc_cfg_tool_task_get {var} sta_top_n_paths] 0]
+
 set fields "{capacitance slew input_pins nets fanout}"
 set PREFIX "SC_METRIC:"
 
@@ -20,7 +26,7 @@ if { [sc_cfg_tool_task_check_in_list setup var reports] } {
   report_checks -fields $fields -path_delay max -format full_clock_expanded \
     > reports/timing/setup.rpt
   sc_display_report reports/timing/setup.rpt
-  report_checks -path_delay max -group_count $openroad_sta_top_n_paths \
+  report_checks -path_delay max -group_count $sc_sta_top_n_paths \
     > reports/timing/setup.topN.rpt
 
   puts "$PREFIX setupslack"
@@ -39,7 +45,7 @@ if { [sc_cfg_tool_task_check_in_list hold var reports] } {
   report_checks -fields $fields -path_delay min -format full_clock_expanded \
     > reports/timing/hold.rpt
   sc_display_report reports/timing/hold.rpt
-  report_checks -path_delay min -group_count $openroad_sta_top_n_paths \
+  report_checks -path_delay min -group_count $sc_sta_top_n_paths \
     > reports/timing/hold.topN.rpt
 
   puts "$PREFIX holdslack"
@@ -55,7 +61,7 @@ if { [sc_cfg_tool_task_check_in_list unconstrained var reports] } {
   report_checks -fields $fields -unconstrained -format full_clock_expanded \
     > reports/timing/unconstrained.rpt
   sc_display_report reports/timing/unconstrained.rpt
-  report_checks -unconstrained -group_count $openroad_sta_top_n_paths \
+  report_checks -unconstrained -group_count $sc_sta_top_n_paths \
     > reports/timing/unconstrained.topN.rpt
 }
 
@@ -115,7 +121,7 @@ if { [sc_cfg_tool_task_check_in_list power var reports] } {
     report_power -corner $corner_name > reports/power/${corner_name}.rpt
     sc_display_report reports/power/${corner_name}.rpt
   }
-  report_power_metric -corner $sc_power_corner
+  report_power_metric -corner [lindex [sc_cfg_tool_task_get {var} power_corner] 0]
 }
 
 puts "$PREFIX cellarea"
@@ -156,3 +162,10 @@ if { $unconstrained_endpoints == "" } {
   set unconstrained_endpoints 0
 }
 utl::metric_int "timing__unconstrained" $unconstrained_endpoints
+
+# Images
+if { [sc_has_gui] && [lindex [sc_cfg_tool_task_get {var} ord_enable_images] 0] == "true" } {
+  utl::push_metrics_stage "sc__image__{}"
+  gui::show "source \"${sc_refdir}/gui_write_images.tcl\"" false
+  utl::pop_metrics_stage
+}

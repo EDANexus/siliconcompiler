@@ -29,22 +29,28 @@ foreach layer [[ord::get_db_tech] getLayers] {
 # Only set these if routing tracks are available
 if { $has_routing_tracks } {
     # Adjust macro extention
-    set sc_grt_macro_extension [lindex [sc_cfg_tool_task_get {var} grt_macro_extension] 0]
-    if { $sc_grt_macro_extension > 0 } {
-        utl::info FLW 1 "Setting global routing macro extension to $sc_grt_macro_extension gcells"
-        set_macro_extension $sc_grt_macro_extension
+    if { [sc_cfg_tool_task_exists {var} grt_macro_extension] } {
+        set sc_grt_macro_extension [lindex [sc_cfg_tool_task_get {var} grt_macro_extension] 0]
+        if { $sc_grt_macro_extension > 0 } {
+            utl::info FLW 1 "Setting global routing macro extension to $sc_grt_macro_extension gcells"
+            set_macro_extension $sc_grt_macro_extension
+        }
     }
 
     # Set min and max routing layers
-    set sc_grt_signal_min_layer [sc_get_layer_name [lindex [sc_cfg_tool_task_get {var} grt_signal_min_layer] 0]]
-    set sc_grt_signal_max_layer [sc_get_layer_name [lindex [sc_cfg_tool_task_get {var} grt_signal_max_layer] 0]]
-    utl::info FLW 1 "Setting global routing signal routing layers to: ${sc_grt_signal_min_layer}-${sc_grt_signal_max_layer}"
-    set_routing_layers -signal "${sc_grt_signal_min_layer}-${sc_grt_signal_max_layer}"
+    if { [sc_cfg_tool_task_exists {var} grt_signal_min_layer] && [sc_cfg_tool_task_exists {var} grt_signal_max_layer] } {
+        set sc_grt_signal_min_layer [sc_get_layer_name [lindex [sc_cfg_tool_task_get {var} grt_signal_min_layer] 0]]
+        set sc_grt_signal_max_layer [sc_get_layer_name [lindex [sc_cfg_tool_task_get {var} grt_signal_max_layer] 0]]
+        utl::info FLW 1 "Setting global routing signal routing layers to: ${sc_grt_signal_min_layer}-${sc_grt_signal_max_layer}"
+        set_routing_layers -signal "${sc_grt_signal_min_layer}-${sc_grt_signal_max_layer}"
+    }
 
-    set sc_grt_clock_min_layer [sc_get_layer_name [lindex [sc_cfg_tool_task_get {var} grt_clock_min_layer] 0]]
-    set sc_grt_clock_max_layer [sc_get_layer_name [lindex [sc_cfg_tool_task_get {var} grt_clock_max_layer] 0]]
-    utl::info FLW 1 "Setting global routing clock routing layers to: ${sc_grt_signal_min_layer}-${sc_grt_signal_max_layer}"
-    set_routing_layers -clock "${sc_grt_clock_min_layer}-${sc_grt_clock_max_layer}"
+    if { [sc_cfg_tool_task_exists {var} grt_clock_min_layer] && [sc_cfg_tool_task_exists {var} grt_clock_max_layer] } {
+        set sc_grt_clock_min_layer [sc_get_layer_name [lindex [sc_cfg_tool_task_get {var} grt_clock_min_layer] 0]]
+        set sc_grt_clock_max_layer [sc_get_layer_name [lindex [sc_cfg_tool_task_get {var} grt_clock_max_layer] 0]]
+        utl::info FLW 1 "Setting global routing clock routing layers to: ${sc_grt_signal_min_layer}-${sc_grt_signal_max_layer}"
+        set_routing_layers -clock "${sc_grt_clock_min_layer}-${sc_grt_clock_max_layer}"
+    }
 }
 
 ######################
