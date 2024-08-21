@@ -1,7 +1,7 @@
 import siliconcompiler
 from siliconcompiler.flows import asicflow, asictopflow, signoffflow, synflow
 from siliconcompiler.checklists import oh_tapeout
-from siliconcompiler.tools.openroad import openroad
+from siliconcompiler.tools import openroad
 from siliconcompiler.tools._common import get_tool_tasks
 
 from lambdapdk import gf180

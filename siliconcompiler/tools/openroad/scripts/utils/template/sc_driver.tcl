@@ -16,7 +16,7 @@ set sc_refdir [sc_cfg_tool_task_get refdir]
 ###############################
 
 # Design information
-set sc_design [sc_cfg_get design]
+set sc_design [sc_top]
 
 # PDK information
 set sc_pdk [sc_cfg_get option pdk]

@@ -1,5 +1,5 @@
 proc get_input_files { type key } {
-    set sc_design [sc_cfg_get design]
+    global sc_design
 
     set input_file "inputs/${sc_design}.${type}"
     if { [file exists $input_file] } {
@@ -39,9 +39,7 @@ proc sc_get_layer_name { name } {
 }
 
 proc has_tie_cell { type } {
-  upvar sc_cfg sc_cfg
-  upvar sc_mainlib sc_mainlib
-  upvar sc_tool sc_tool
+  global sc_mainlib
 
   set library_vars [sc_cfg_get library $sc_mainlib option {var}]
   return [expr { [dict exists $library_vars openroad_tie${type}_cell] && \
@@ -49,9 +47,7 @@ proc has_tie_cell { type } {
 }
 
 proc get_tie_cell { type } {
-  upvar sc_cfg sc_cfg
-  upvar sc_mainlib sc_mainlib
-  upvar sc_tool sc_tool
+  global sc_mainlib
 
   set cell [lindex [sc_cfg_get library $sc_mainlib option {var} openroad_tie${type}_cell] 0]
   set port [lindex [sc_cfg_get library $sc_mainlib option {var} openroad_tie${type}_port] 0]

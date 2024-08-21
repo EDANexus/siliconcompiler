@@ -34,22 +34,27 @@ utl::push_metrics_stage "sc__step__{}"
 # Need to check if we have any macros before performing macro placement,
 # since we get an error otherwise.
 if { [sc_design_has_unplaced_macros] } {
-  if { $openroad_rtlmp_enable == "true" } {
-    set halo_max [expr { max([lindex $openroad_mpl_macro_place_halo 0], \
-                             [lindex $openroad_mpl_macro_place_halo 1]) }]
+  if { [lindex [sc_cfg_tool_task_get {var} rtlmp_enable] 0] == "true" } {
+    set mpl_macro_place_halo [sc_cfg_tool_task_get {var} macro_place_halo]
+    set halo_max [expr { max([lindex $mpl_macro_place_halo 0], \
+                             [lindex $mpl_macro_place_halo 1]) }]
 
     set rtlmp_args []
-    if { $openroad_rtlmp_min_instances != "" } {
-      lappend rtlmp_args -min_num_inst $openroad_rtlmp_min_instances
+    set rtlmp_min_instances [lindex [sc_cfg_tool_task_get {var} rtlmp_min_instances] 0]
+    if { $rtlmp_min_instances != "" } {
+      lappend rtlmp_args -min_num_inst $rtlmp_min_instances
     }
-    if { $openroad_rtlmp_max_instances != "" } {
-      lappend rtlmp_args -max_num_inst $openroad_rtlmp_max_instances
+    set rtlmp_max_instances [lindex [sc_cfg_tool_task_get {var} rtlmp_max_instances] 0]
+    if { $rtlmp_max_instances != "" } {
+      lappend rtlmp_args -max_num_inst $rtlmp_max_instances
     }
-    if { $openroad_rtlmp_min_macros != "" } {
-      lappend rtlmp_args -min_num_macro $openroad_rtlmp_min_macros
+    set rtlmp_min_macros [lindex [sc_cfg_tool_task_get {var} rtlmp_min_macros] 0]
+    if { $rtlmp_min_macros != "" } {
+      lappend rtlmp_args -min_num_macro $rtlmp_min_macros
     }
-    if { $openroad_rtlmp_max_macros != "" } {
-      lappend rtlmp_args -max_num_macro $openroad_rtlmp_max_macros
+    set rtlmp_max_macros [lindex [sc_cfg_tool_task_get {var} rtlmp_max_macros] 0]
+    if { $rtlmp_max_macros != "" } {
+      lappend rtlmp_args -max_num_macro $rtlmp_max_macros
     }
 
     rtl_macro_placer -report_directory reports/rtlmp \
@@ -66,8 +71,10 @@ if { [sc_design_has_unplaced_macros] } {
     # Macro placement
     ###########################
 
-    macro_placement -halo $openroad_mpl_macro_place_halo \
-      -channel $openroad_mpl_macro_place_channel
+    set mpl_macro_place_halo [sc_cfg_tool_task_get {var} macro_place_halo]
+    set mpl_macro_place_channel [sc_cfg_tool_task_get {var} macro_place_channel]
+    macro_placement -halo $mpl_macro_place_halo \
+      -channel $mpl_macro_place_channel
 
     # Note: some platforms set a "macro blockage halo" at this point, but the
     # technologies we support do not, so we don't include that step for now.
