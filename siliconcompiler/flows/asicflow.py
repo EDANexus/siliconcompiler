@@ -83,50 +83,50 @@ def setup(chip,
     longpipe = [
         'syn',
         'synmin',
-        'init_floorplan',
-        'macro_placement',
-        'tapcell',
-        'power_grid',
-        'io_pin_placement',
+        'floorplan.init',
+        'floorplan.macro_placement',
+        'floorplan.tapcell',
+        'floorplan.power_grid',
+        'floorplan.io_pin_placement',
         'floorplanmin',
-        'global_placement',
-        'repair_design',
-        'detailed_placement',
+        'place.global_placement',
+        'place.repair_design',
+        'place.detailed_placement',
         'placemin',
-        'clock_tree_synthesis',
-        'repair_timing',
-        'fillcell',
+        'cts.clock_tree_synthesis',
+        'cts.repair_timing',
+        'cts.fillcell',
         'ctsmin',
-        'global_route',
-        'antenna_repair',
-        'detailed_route',
+        'route.global_route',
+        'route.antenna_repair',
+        'route.detailed_route',
         'routemin',
-        'metal_fill'
+        'dfm.metal_fill'
     ]
 
     # step --> task
     tasks = {
         'syn': syn_asic,
         'synmin': minimum,
-        'init_floorplan': init_floorplan,
-        'macro_placement': macro_placement,
-        'tapcell': endcap_tapcell_insertion,
-        'power_grid': power_grid,
-        'io_pin_placement': io_pin_placement,
+        'floorplan.init': init_floorplan,
+        'floorplan.macro_placement': macro_placement,
+        'floorplan.tapcell': endcap_tapcell_insertion,
+        'floorplan.power_grid': power_grid,
+        'floorplan.io_pin_placement': io_pin_placement,
         'floorplanmin': minimum,
-        'global_placement': global_placement,
-        'repair_design': repair_design,
-        'detailed_placement': detailed_placement,
+        'place.global_placement': global_placement,
+        'place.repair_design': repair_design,
+        'place.detailed_placement': detailed_placement,
         'placemin': minimum,
-        'clock_tree_synthesis': clock_tree_synthesis,
-        'repair_timing': repair_timing,
-        'fillcell': fillercell_insertion,
+        'cts.clock_tree_synthesis': clock_tree_synthesis,
+        'cts.repair_timing': repair_timing,
+        'cts.fillcell': fillercell_insertion,
         'ctsmin': minimum,
-        'global_route': global_route,
-        'antenna_repair': antenna_repair,
-        'detailed_route': detailed_route,
+        'route.global_route': global_route,
+        'route.antenna_repair': antenna_repair,
+        'route.detailed_route': detailed_route,
         'routemin': minimum,
-        'metal_fill': fillmetal_insertion
+        'dfm.metal_fill': fillmetal_insertion
     }
 
     np = {
@@ -144,7 +144,8 @@ def setup(chip,
     for step in longpipe:
         task = tasks[step]
         if task == minimum:
-            if prevstep in np and np[prevstep] > 1:
+            np_step = prevstep.split('.')[0]
+            if np_step in np and np[np_step] > 1:
                 flowpipe.append(step)
         else:
             flowpipe.append(step)
@@ -158,22 +159,30 @@ def setup(chip,
     prevstep = setup_multiple_frontends(chip, flow)
     for step, task in flowtasks:
         fanout = 1
-        if step in np:
-            fanout = np[step]
+        np_step = step.split('.')[0]
+        if np_step in np:
+            fanout = np[np_step]
+
         # create nodes
         for index in range(fanout):
             # nodes
             flow.node(flowname, step, task, index=index)
 
+        # create edges
+        for index in range(fanout):
             # edges
+            fanin = 1
+            np_prestep = prevstep.split('.')[0]
+            if np_prestep in np:
+                fanin = np[np_prestep]
             if task == minimum:
-                fanin = 1
-                if prevstep in np:
-                    fanin = np[prevstep]
                 for i in range(fanin):
                     flow.edge(flowname, prevstep, step, tail_index=i)
             elif prevstep:
-                flow.edge(flowname, prevstep, step, head_index=index)
+                if fanin == fanout:
+                    flow.edge(flowname, prevstep, step, tail_index=index, head_index=index)
+                else:
+                    flow.edge(flowname, prevstep, step, head_index=index)
 
             # metrics
             goal_metrics = ()
@@ -206,4 +215,4 @@ if __name__ == "__main__":
     chip.set('input', 'constraint', 'sdc', 'test')
     flow = make_docs(chip)
     chip.use(flow)
-    chip.write_flowgraph(f"{flow.top()}.png", flow=flow.top())
+    chip.write_flowgraph(f"{flow.top()}.png", flow=flow.top(), background="white", show_io=True)
