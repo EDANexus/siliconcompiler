@@ -15,6 +15,11 @@ from siliconcompiler.tools.openroad import detailed_placement
 from siliconcompiler.tools.openroad import clock_tree_synthesis
 from siliconcompiler.tools.openroad import repair_timing
 from siliconcompiler.tools.openroad import fillercell_insertion
+from siliconcompiler.tools.openroad import global_route
+from siliconcompiler.tools.openroad import antenna_repair
+from siliconcompiler.tools.openroad import detailed_route
+from siliconcompiler.tools.openroad import fillmetal_insertion
+from siliconcompiler.tools.openroad import write_data
 from siliconcompiler.tools.klayout import export as klayout_export
 
 from siliconcompiler.tools.builtin import minimum
@@ -92,9 +97,11 @@ def setup(chip,
         'repair_timing',
         'fillcell',
         'ctsmin',
-        # 'route',
-        # 'routemin',
-        # 'dfm'
+        'global_route',
+        'antenna_repair',
+        'detailed_route',
+        'routemin',
+        'metal_fill'
     ]
 
     # step --> task
@@ -115,9 +122,11 @@ def setup(chip,
         'repair_timing': repair_timing,
         'fillcell': fillercell_insertion,
         'ctsmin': minimum,
-        # 'route': route,
-        # 'routemin': minimum,
-        # 'dfm': dfm
+        'global_route': global_route,
+        'antenna_repair': antenna_repair,
+        'detailed_route': detailed_route,
+        'routemin': minimum,
+        'metal_fill': fillmetal_insertion
     }
 
     np = {
@@ -185,8 +194,8 @@ def setup(chip,
     # add write information steps
     flow.node(flowname, 'write_gds', klayout_export)
     flow.edge(flowname, prevstep, 'write_gds')
-    # flow.node(flowname, 'write_data', openroad_export)
-    # flow.edge(flowname, prevstep, 'write_data')
+    flow.node(flowname, 'write_data', write_data)
+    flow.edge(flowname, prevstep, 'write_data')
 
     return flow
 

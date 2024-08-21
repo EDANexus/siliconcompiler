@@ -23,6 +23,7 @@ def setup(chip):
     option = ['-z', '-nc', '-rx', '-r']
     chip.set('tool', tool, 'task', task, 'script', script, step=step, index=index, clobber=clobber)
     chip.set('tool', tool, 'task', task, 'option', option, step=step, index=index, clobber=clobber)
+    chip.set('tool', tool, 'task', task, 'threads', 1, step=step, index=index, clobber=False)
 
     targetlibs = get_libraries(chip, 'logic')
     stackup = chip.get('option', 'stackup')
