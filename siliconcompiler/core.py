@@ -106,7 +106,7 @@ class Chip:
             'libs': [],
             'checklists': []
         }
-    
+
         self.register_source('siliconcompiler',
                              'python://siliconcompiler')
 
@@ -1293,8 +1293,7 @@ class Chip:
                     dependency_path = os.path.abspath(
                         os.path.join(sc_package.path(self, dependency), path))
                     if os.path.exists(dependency_path):
-                        # self.__file_paths[cache_key] = dependency_path
-                        pass
+                        self.__file_paths[cache_key] = dependency_path
                     else:
                         dependency_path = None
                 result.append(dependency_path)
@@ -1314,8 +1313,7 @@ class Chip:
                                              missing_ok=missing_ok,
                                              search_paths=search_paths)
                 if sc_file:
-                    # self.__file_paths[cache_key] = sc_file
-                    pass
+                    self.__file_paths[cache_key] = sc_file
             result.append(sc_file)
 
         if self._relative_path and not abs_path_only:
